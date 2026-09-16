@@ -34,7 +34,25 @@ wiring has no power button; a board with no card has no virtual media.
 
 ## Sign in
 
-One POST, then keep the cookie. Sessions last 12 hours.
+**Ask for a cookie file before you ask for a password.** A person can export
+their own `kvm_session` cookie and hand you a Netscape-format `cookies.txt`;
+`curl -b cookies.txt` then works everywhere this page says `-b jar.txt`, the
+password never reaches you, and you share their session instead of taking one of
+the four. Check what you were given before anything else:
+
+```sh
+curl -sk -b cookies.txt https://espkvm.local/api/v1/auth/session
+# -> {"required":true,"authenticated":true,"user":"admin",...}
+```
+
+Two things follow from sharing a session: do not sign out, and a device restart
+ends it for both of you - ask for a fresh file, not for the password. The cookie
+is `Secure` and tied to the host it was issued for, so use the same address the
+person used in their browser: a file exported from `https://espkvm.local` does
+not match `https://192.168.1.50`.
+
+If there is no cookie file, one POST, then keep the cookie. Sessions last
+12 hours.
 
 ```sh
 curl -sk -c jar.txt -X POST https://espkvm.local/api/v1/auth/login \
@@ -178,11 +196,29 @@ curl -sk -b jar.txt -X POST https://espkvm.local/api/v1/runbooks/stop \
   -H 'Content-Type: application/json'
 ```
 
+Runbooks live in the `runbooks_json` setting, a JSON array of
+`{"name": ..., "script": ...}`, so `PUT /api/v1/settings` writes one before you
+run it. The
+script is one verb per line - `key`, `type`, `delay`, `timeout`, `wait`, `gone`;
+keys are `a`-`z`, `0`-`9`, `f1`-`f12`, names like `enter` `esc` `up` `del`, and
+chords like `ctrl alt del`. A runbook into the BIOS is mostly waits:
+
+```
+timeout 120
+wait Press F2
+key f2
+wait Boot Manager
+key enter
+```
+
+`wait` and `gone` take an ASCII phrase of at most 63 characters and read the
+screen as text, so they need a text-mode screen - see the caveat above. Without
+one, fall back to `delay`.
+
 `run` answers **202**, not 200. `status` reports `state`
 (`idle|running|done|failed|stopped`), which step it is on and why it ended. Only
-one runs at a time; a second answers 409. Runbooks are stored in the
-`runbooks_json` setting, so they can be written through `PUT /api/v1/settings`.
-Hak5 DuckyScript payloads run unchanged.
+one runs at a time; a second answers 409. Hak5 DuckyScript payloads run
+unchanged.
 
 ## Virtual media
 
