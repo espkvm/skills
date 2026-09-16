@@ -1,0 +1,10 @@
+{
+  "name": "espkvm",
+  "version": "0.1.0",
+  "description": "Drive a computer through an ESP-KVM: read its BIOS screen as text, press keys, swap the virtual disk, cut the power.",
+  "author": { "name": "ESP-KVM contributors" },
+  "homepage": "https://espkvm.io",
+  "repository": "https://github.com/espkvm/skills",
+  "license": "Apache-2.0",
+  "keywords": ["kvm", "ipkvm", "espkvm", "bios", "esp32p4", "automation"]
+}
