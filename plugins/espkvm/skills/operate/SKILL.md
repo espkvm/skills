@@ -119,10 +119,54 @@ For screens that are pictures, take a JPEG:
 curl -sk -b jar.txt https://espkvm.local/api/v1/video/frame.jpg -o screen.jpg
 ```
 
-This needs the MJPEG codec. While H.264 is selected it answers **409** - an
-H.264 stream cannot be snapshotted. `GET /api/v1/video/status` reports `codec`,
+It works on either codec: while H.264 runs the device encodes the frame it holds
+as a JPEG, which takes about half a second. It answers 503 with no video signal.
+`GET /api/v1/video/status` reports `codec`,
 `signal`, `width`, `height`, `inputHz` and `textMode` (whether this mode *could*
 be read as characters).
+
+To keep evidence rather than look at it, save to the device's microSD card
+instead. Not gated by `agent_api`:
+
+```sh
+curl -sk -b jar.txt -X POST -H 'X-ESP-KVM: 1' https://espkvm.local/api/v1/screenshot
+# -> {"file":"SCREENSHOTS/20260917-071905.jpg"}
+curl -sk -b jar.txt -X POST -H 'X-ESP-KVM: 1' https://espkvm.local/api/v1/record/start
+curl -sk -b jar.txt -X POST -H 'X-ESP-KVM: 1' https://espkvm.local/api/v1/record/stop
+curl -sk -b jar.txt https://espkvm.local/api/v1/captures
+curl -sk -b jar.txt "https://espkvm.local/api/v1/captures/file?path=VIDEO/20260917-072015.ts" -o rec.ts
+```
+
+`record/start?seconds=300` records for five minutes; without it the
+`rec_max_min` setting decides (60 by default), and files split every
+`rec_split_min` minutes. In a runbook the same is `record`, `record 300`,
+`record stop` and `screenshot` - a runbook that must leave a recording fails if
+it cannot start one. `record/start?every=10` (runbook: `timelapse 10`) is a
+timelapse instead: one keyframe every 10 s, played at 25 fps, no length limit
+unless `seconds` is given; it becomes an MP4 when stopped.
+
+Recording needs H.264 and a writable card that is not handed whole to the target;
+start answers **409** with the reason otherwise, and `record.blocked` in
+`video/status` says it ahead of time. A recording runs on the device until it is
+stopped, the card fills, or the card is pulled - it does not need you connected.
+While it runs, `captures/delete` and `storage/upload` answer 409.
+
+If the `dashcam` setting is on, the device already holds the last stretch of the
+screen in memory (`record.prerollSeconds` in `video/status` says how far back),
+so evidence of something that just happened can still be saved:
+
+```sh
+curl -sk -b jar.txt -X POST -H 'X-ESP-KVM: 1' https://espkvm.local/api/v1/record/event
+# -> {"on":true,"file":"VIDEO/20260917-130911-event.ts","event":true,"prerollSeconds":37,...}
+```
+
+The clip records `dashcam_post_s` more seconds (30 by default), then becomes an
+MP4 with chapters next to where the .ts was; the .ts is removed. It answers 409
+when the dashcam is off or an ordinary recording runs. Calling it again while a
+clip is being saved adds a chapter and makes the clip longer. With
+`dashcam_store` set to microSD (enum index 1) the past is kept on the card in
+VIDEO/.dashcam instead of PSRAM, so it reaches back the full `dashcam_pre_s` on
+any board; the card is then busy and cannot be handed to the target.
 
 ## Keyboard and pointer
 
@@ -288,7 +332,6 @@ action while one is in flight answers 429.
 ## Traps, collected
 
 - `screen/text` 204 = the screen is a picture. Normal, not an error.
-- `frame.jpg` 409 = H.264 is running; set `vid_codec` to 0 (mjpeg) to snapshot.
 - `hid/type` silently stops at 80 characters and silently drops anything the US
   layout cannot produce.
 - Pointer coordinates are 0..32767, not pixels.
