@@ -151,6 +151,16 @@ start answers **409** with the reason otherwise, and `record.blocked` in
 stopped, the card fills, or the card is pulled - it does not need you connected.
 While it runs, `captures/delete` and `storage/upload` answer 409.
 
+What was on the screen during a recording is searchable when `rec_text` is on
+(it is by default): the device saves the screen's text next to the video and
+
+```sh
+curl -sk -b jar.txt "https://espkvm.local/api/v1/captures/search?q=press%20f2"
+# -> {"hits":[{"path":"VIDEO/20260917-072015.ts","seconds":12.4,"text":"..."}],"more":false}
+```
+
+says where it was. Only screens drawn as characters are saved this way.
+
 If the `dashcam` setting is on, the device already holds the last stretch of the
 screen in memory (`record.prerollSeconds` in `video/status` says how far back),
 so evidence of something that just happened can still be saved:
