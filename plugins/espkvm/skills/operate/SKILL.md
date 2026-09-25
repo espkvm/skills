@@ -125,6 +125,12 @@ as a JPEG, which takes about half a second. It answers 503 with no video signal.
 `signal`, `width`, `height`, `inputHz` and `textMode` (whether this mode *could*
 be read as characters).
 
+With `signal: false`, `POST /api/v1/video/reconnect` offers the source a fresh
+start - the target sees its monitor unplugged and plugged back in, which can
+wake a sleeping machine, so ask before doing it. `knowsDdc5v: false` means the
+capture chip cannot tell a target that is off or asleep from one that stopped
+sending (the M5Stack board).
+
 To keep evidence rather than look at it, save to the device's microSD card
 instead. Not gated by `agent_api`:
 
