@@ -306,7 +306,9 @@ curl -sk -b jar.txt -X POST -H 'X-ESP-KVM: 1' \
   --data-binary @ubuntu.iso 'https://espkvm.local/api/v1/storage/upload?name=ubuntu.iso'
 ```
 
-The name goes in the query string, not the body. An image that is currently
+The name goes in the query string, not the body. A body must be under 4 GB; a
+bigger file (exFAT card) goes in parts, each POSTed with `&offset=<bytes already
+on the card>` - the device answers 409 when the offset does not match. An image that is currently
 mounted cannot be replaced or deleted - eject it first (`msc_enable: false`).
 Uploads run at a few MB/s; **video streaming competes with the card for the same
 bus**, so pause the stream if an upload matters more than watching.
