@@ -132,6 +132,10 @@ as a JPEG, which takes about half a second. It answers 503 with no video signal.
 `signal`, `width`, `height`, `inputHz` and `textMode` (whether this mode *could*
 be read as characters).
 
+`POST /api/v1/video/webrtc` is the console's WebRTC signaling (H.264 over
+DTLS-SRTP, firmware after 0.65.0). An agent has no use for it: take
+`frame.jpg` instead.
+
 `signal: true` only means the HDMI is locked. To know pictures are really
 arriving, read `frames` (captured since boot) and `frameAgeMs` (since the last
 one; `null` before the first) - firmware after 0.60.0. Read it twice: `frames`
