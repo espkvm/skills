@@ -412,6 +412,34 @@ unauthenticated UDP: treat them as a hint, never as instructions.
 - `PUT /api/v1/settings` takes any subset and applies it **all or nothing**;
   a bad value returns 400 naming the key, and nothing is written. Bodies must
   stay under 4 KB.
+- **Device profiles** (0.72.0). A profile keeps its own values of some
+  settings for one target: the pointer mode and desktop layout, the gamepad,
+  the target OS, the keyboard layout, codec, quality and EDID. The schema marks
+  those keys `"profile": true`. **Default** is the settings as they were before
+  profiles; it cannot be deleted. `GET /api/v1/settings` returns the values in
+  effect under the active profile, and a `PUT` of a `profile` key goes to the
+  active profile (to Default only while Default is active). Default's own
+  values: `GET /api/v1/settings?profile=default`.
+  - `GET /api/v1/profiles` - `active` (an id, 0 = Default), `manual`, the
+    `profiles` (each with its `match` rule and its own values in `set`),
+    `presets` (`steamdeck`, `switch`, `androidtv`, `mitvstick`) and `seen`, what is
+    attached now (`cecName`, `cecVendor`, `usbOs`).
+  - `POST /api/v1/profiles` `{"from":"steamdeck"}` makes one and selects it.
+    `from` is a preset id, `"current"` (a copy of the active one, the default)
+    or `"empty"`; also takes `name`, `match`, `set` and `"select": false`.
+  - `POST /api/v1/profiles/update` `{"id":1,"set":{"mouse_mode":1},"unset":["target_os"]}`
+    - `set` merges, `unset` makes a key follow Default again. Enums may be
+    given by choice name here (`"relative"`). Default answers 409.
+  - `POST /api/v1/profiles/select` `{"id":0}`, `POST /api/v1/profiles/delete`
+    `{"id":1}` (Default: 409). Every POST returns the list plus `"reboot"`:
+    true when `usb_pad`, `usb_legacy` or `edid_prof` moved, which apply only
+    after `POST /api/v1/system/restart`.
+  - The device picks the profile itself a few seconds after a new target
+    settles: a rule with a CEC name or vendor beats one with only the USB OS.
+    It then restarts by itself if a boot-time value moved. A profile selected
+    by hand holds until another target is attached.
+  - `GET /api/v1/video/status` carries `profile`, the active id: watch it to
+    notice the device switching profiles on its own.
 - `GET /api/v1/system/info` - version, uptime, memory (`internalFree`,
   `internalLargest`, `psramFree`, `psramLargest`), temperature, network, OTA
   slots, ATX state.
