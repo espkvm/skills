@@ -412,6 +412,16 @@ unauthenticated UDP: treat them as a hint, never as instructions.
 - `PUT /api/v1/settings` takes any subset and applies it **all or nothing**;
   a bad value returns 400 naming the key, and nothing is written. Bodies must
   stay under 4 KB.
+- **Screen areas** (next release). Up to 8 rectangles the device watches on
+  its own. `GET /api/v1/regions` lists them with `live` state (`active`,
+  `diff` = % of the area off its base or saved picture, `colour`, `events`).
+  `POST /api/v1/regions` `{"regions":[{"name":"Build","x":0.1,"y":0.8,"w":0.5,"h":0.05,"mode":"still","hold":60}]}`
+  replaces the whole set (x/y/w/h are parts of the frame, 0..1; modes `change`,
+  `still`, `like`, `unlike`, `colour`; `threshold` 1..100, `hold` seconds,
+  `colour`, `notify`, `clip`). `POST /api/v1/regions/remember` `{"id":1}` saves
+  what the area shows now for `like`/`unlike`. Cheaper for an agent than
+  polling screenshots: set an area, then poll `live.active` / `live.events`,
+  or put `wait area Build` in a runbook.
 - **Device profiles** (0.72.0). A profile keeps its own values of some
   settings for one target: the pointer mode and desktop layout, the gamepad,
   the target OS, the keyboard layout, codec, quality and EDID. The schema marks
