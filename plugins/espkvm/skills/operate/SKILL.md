@@ -392,6 +392,27 @@ panic printed while nobody watched is still there. It is raw terminal output:
 expect ANSI colour codes and `\r\n`. `serial/send` is gated by `agent_api`;
 `enter` adds a CR, not LF. `/serial/send` answers 409 when the console is off.
 
+**Over USB, no wires (0.74.0+).** `usb_serial` (an enum, takes a restart) puts
+a serial port on the USB cable the target already has: `console` makes the
+serial console above use it, `agent` gives it to espkvm-agent, a program on the
+target. With an agent connected:
+
+```sh
+curl -sk -b jar.txt https://espkvm.local/api/v1/agent             # mode, connected, agent version, OS, ops
+curl -sk -b jar.txt https://espkvm.local/api/v1/agent/info        # hostname, OS, uptime, user, interfaces
+curl -sk -b jar.txt https://espkvm.local/api/v1/agent/clipboard   # {"text":...}
+curl -sk -b jar.txt -X POST -H 'Content-Type: application/json' \
+  -d '{"text":"hello"}' https://espkvm.local/api/v1/agent/clipboard
+```
+
+`POST /api/v1/agent/power` takes `{"action":"shutdown"|"reboot"}`: it shuts
+the target down through its OS. Ask the operator first. Reading the clipboard
+and power are off unless the agent was installed with `--allow-clipboard-read`
+or `--allow-power` on the target, and the device cannot change that. Refusals
+come back with a `code`: `not_allowed` 403, `no_desktop` and `locked` (the
+target's screen is locked) 409, no agent connected 409, no answer 504.
+Clipboard text is at most 64 KB.
+
 **Netconsole.** With `nc_enable` on, the device keeps the last 64 KB of whatever
 the target sends to UDP 6666 (Linux netconsole, or syslog):
 `GET /api/v1/netlog` for the counters, `GET /api/v1/netlog/log?since=0` for the
