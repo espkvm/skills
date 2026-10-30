@@ -483,7 +483,11 @@ unauthenticated UDP: treat them as a hint, never as instructions.
   it: the reply carries an `X-Log-Pos` header, and `?since=<that>` next time
   returns only what is new.
 - `POST /api/v1/system/update` - a firmware image into the spare slot
-  (octet-stream, so `X-ESP-KVM: 1`).
+  (octet-stream, so `X-ESP-KVM: 1`). Add `?trial=600` on a remote device: the
+  update goes back by itself unless `POST /api/v1/system/update/keep` comes
+  within 600 s. Call keep only after the device answers again over the same
+  path you use. While `trialSeconds` in `/system/info` is above 0, a new update
+  is refused (409).
 
 ## Traps, collected
 
