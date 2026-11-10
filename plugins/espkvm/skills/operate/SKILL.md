@@ -196,6 +196,26 @@ curl -sk -b jar.txt "https://espkvm.local/api/v1/captures/search?q=press%20f2"
 
 says where it was. Only screens drawn as characters are saved this way.
 
+With a WebDAV folder set (`up_dav_url`, `up_dav_user`, `up_dav_pass`), the
+device sends a file there itself, into `<folder>/<hostname>/VIDEO/` or
+`SCREENSHOTS/`. `canUpload` in `captures` says whether a folder is set.
+
+```sh
+curl -sk -b jar.txt -X POST -H 'X-ESP-KVM: 1' "https://espkvm.local/api/v1/captures/upload?path=VIDEO/20260917-072015.ts"
+curl -sk -b jar.txt https://espkvm.local/api/v1/captures/upload
+# -> {"ready":true,"dest":"WebDAV","items":[{"path":"VIDEO/...","state":"sending","bytes":..,"total":..,"message":""}]}
+```
+
+Files go one at a time; `state` is `queued`, `sending`, `done`, `error` (with
+`message`) or `cancelled`. `POST captures/upload/cancel` stops them, and
+`POST captures/upload/test` checks the folder (answer in `test`).
+
+`up_dav_ev` is a bit mask of what the device queues by itself once it is
+saved: 1 recording, 2 clip saved by hand, 4 dashcam clip, 8 screenshot,
+16 timelapse. Those items carry `"auto":true`. When the server does not
+answer, the whole queue waits; a queued item then has `retryIn` (seconds)
+and the reason in `message`. The waiting list survives a restart.
+
 If the `dashcam` setting is on, the device already holds the last stretch of the
 screen in memory (`record.prerollSeconds` in `video/status` says how far back),
 so evidence of something that just happened can still be saved:
