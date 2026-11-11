@@ -143,6 +143,13 @@ should grow and `frameAgeMs` stay under ~100. It counts frames even on a still
 screen that nobody is watching, so it is not the same as `fps`, which is what
 the encoder sent and can be 0 on a static menu.
 
+When `signal` is true and `frames` does not grow, read `csi` (firmware after
+0.81.0): the CSI link as the receiver last saw it. `"stop":[1,1],"stopClk":1`
+with `clkHs` 0 is a working link between frames: the cable carries the lanes,
+look at the capture board's mode instead. Every `stop` 0 and `clkHs` 0 means
+nothing drives the lanes: the ribbon, its connector or a capture board wired
+differently. `phyErr` other than 0 is a lane the receiver cannot read.
+
 From 0.62.0 the status also says how fast it is: `lagMs` (`wait`, `send`,
 `total`, `totalMax`: a frame landing until it was sent, over the last second),
 `linkPct` (100 normally; lower while a viewer's link cannot keep up and the
@@ -491,6 +498,14 @@ unauthenticated UDP: treat them as a hint, never as instructions.
     by hand holds until another target is attached.
   - `GET /api/v1/video/status` carries `profile`, the active id: watch it to
     notice the device switching profiles on its own.
+- Notifications go to Telegram, a webhook, browsers (Web Push) and, after
+  0.81.0, an ntfy topic (`notify_ntfy_url`, `notify_ntfy_key`). What each one
+  takes is a mask per channel, `notify_*_ev`, a bit per kind in the schema's
+  `choices` order; bit 6 is "New firmware", a daily look at the update manifest
+  that only runs while a channel takes it. `POST /api/v1/notify/test` sends a
+  test to every channel set up, `GET /api/v1/notify/status` says how the last
+  one went (`lastResult`), how many wait (`pending`) and which channels are set
+  up (`ready`).
 - `GET /api/v1/system/info` - version, uptime, memory (`internalFree`,
   `internalLargest`, `psramFree`, `psramLargest`), temperature, network, OTA
   slots, ATX state.
