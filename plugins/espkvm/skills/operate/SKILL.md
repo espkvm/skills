@@ -156,6 +156,11 @@ From 0.62.0 the status also says how fast it is: `lagMs` (`wait`, `send`,
 device is sending less) and `h264Cpu` (this board rearranges H.264 frames on the
 CPU - slow above 720p, so prefer MJPEG or a 720p mode there).
 
+`memLow` (firmware after 0.84.0) is `null` normally. While the chip's internal
+RAM is short it is `{"seconds","freeKb","lowestKb","closed","failed"}`: the
+device closes idle request connections to free memory, so a request may need a
+retry, and the picture goes on. It ends after 30 s with enough free.
+
 With `signal: false` the target's screen has often just gone dark after idling.
 Moving the mouse wakes it: `POST /api/v1/hid/move` takes an absolute `x`/`y`
 (0..32767), so send the pointer anywhere harmless, such as the middle. Try that
