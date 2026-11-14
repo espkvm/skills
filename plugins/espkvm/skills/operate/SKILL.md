@@ -460,6 +460,17 @@ unauthenticated UDP: treat them as a hint, never as instructions.
 - `PUT /api/v1/settings` takes any subset and applies it **all or nothing**;
   a bad value returns 400 naming the key, and nothing is written. Bodies must
   stay under 4 KB.
+- **A network change is on trial** (next release, setting `net_trial`, on by
+  default). Writing Wi-Fi, address, `net_mode`, `ts_*` or `wg_*` keys keeps the
+  old values; if the device is not back on the network within 10 minutes of
+  the change taking effect, it puts them back and restarts. `netTrialSeconds`
+  in `/system/info` is the time left, `netReverted` says what the last revert
+  did. Any signed-in request from 30 s after the change keeps it - over a VPN
+  if the change came over one. So after changing the link of a remote device,
+  reach it again over the new path and make one call; do not assume a change
+  that cut you off is permanent.
+- `POST /api/v1/tailscale/logout` over Tailscale returns 409 (next release):
+  the device could not rejoin by itself. Log out from the local network.
 - **Screen areas** (next release). Up to 8 rectangles the device watches on
   its own. `GET /api/v1/regions` lists them with `live` state (`active`,
   `diff` = % of the area off its base or saved picture, `colour`, `events`).
